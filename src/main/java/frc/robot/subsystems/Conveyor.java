@@ -17,7 +17,7 @@ import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
-public class Intake extends SubsystemBase {
+public class Conveyor extends SubsystemBase {
 
   private final SparkFlex motor;
   private final RelativeEncoder encoder;
@@ -25,9 +25,9 @@ public class Intake extends SubsystemBase {
   
   private double setRPM;
   private double tolerance = 10;
- 
-  /** Creates a new Intake. */
-  public Intake() {
+
+  /** Creates a new Conveyor. */
+  public Conveyor() {
     motor = new SparkFlex(14, MotorType.kBrushless);
     encoder = motor.getEncoder();
     pid = motor.getClosedLoopController();
