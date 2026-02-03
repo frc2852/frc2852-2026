@@ -45,7 +45,7 @@ public class TurretSubsystem extends SubsystemBase {
         turretMotor = new TalonFX(CANIds.TURRET_MOTOR, canBus);
         turretCancoder = new CANcoder(CANIds.TURRET_CANCODER, canBus);
 
-
+        // Control requests
         positionRequest = new MotionMagicTorqueCurrentFOC(0);
         neutralRequest = new NeutralOut();
         voltageRequest = new VoltageOut(0);
@@ -69,6 +69,7 @@ public class TurretSubsystem extends SubsystemBase {
     private void configureCANCoder() {
         CANcoderConfiguration config = new CANcoderConfiguration();
 
+        // Sensor configuration
         config.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0.5;
         config.MagnetSensor.SensorDirection = SensorDirectionValue.Clockwise_Positive;
         config.MagnetSensor.MagnetOffset = TurretConstants.CANCODER_OFFSET;
@@ -102,21 +103,19 @@ public class TurretSubsystem extends SubsystemBase {
         config.MotionMagic.MotionMagicAcceleration = TurretConstants.MOTION_MAGIC_ACCELERATION;
         config.MotionMagic.MotionMagicJerk = TurretConstants.MOTION_MAGIC_JERK;
 
-        // Soft limits (convert degrees → rotations)
+        // Soft limits (convert degrees into rotations)
         config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold =
-            TurretConstants.MAX_POSITION_DEGREES / 360.0;
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold =TurretConstants.MAX_POSITION_DEGREES / 360.0;
 
         config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold =
-            TurretConstants.MIN_POSITION_DEGREES / 360.0;
+        config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = TurretConstants.MIN_POSITION_DEGREES / 360.0;
+
 
         // Current limits
         config.CurrentLimits.SupplyCurrentLimitEnable = true;
         config.CurrentLimits.SupplyCurrentLimit = TurretConstants.SUPPLY_CURRENT_LIMIT;
         config.CurrentLimits.SupplyCurrentLowerLimit = TurretConstants.SUPPLY_CURRENT_LOWER_LIMIT;
         config.CurrentLimits.SupplyCurrentLowerTime = TurretConstants.SUPPLY_CURRENT_LOWER_TIME;
-
         config.CurrentLimits.StatorCurrentLimitEnable = true;
         config.CurrentLimits.StatorCurrentLimit = TurretConstants.STATOR_CURRENT_LIMIT;
 
@@ -132,6 +131,7 @@ public class TurretSubsystem extends SubsystemBase {
         }
     }
 
+    // Set turret position in degrees
     public void setPosition(double degrees) {
         targetDegrees = clamp(degrees,TurretConstants.MIN_POSITION_DEGREES,TurretConstants.MAX_POSITION_DEGREES);
 
@@ -140,9 +140,13 @@ public class TurretSubsystem extends SubsystemBase {
         turretMotor.setControl(positionRequest.withPosition(rotations));
     }
 
+    // Turret at target position?
     public boolean atPosition() {
-        return Math.abs(getCurrentPositionDegrees() - targetDegrees)< TurretConstants.POSITION_TOLERANCE_DEGREES;}
+        return Math.abs(getCurrentPositionDegrees() - targetDegrees)< TurretConstants.POSITION_TOLERANCE_DEGREES;
+    }
 
+
+    // Get current position in degrees
     public double getCurrentPositionDegrees() {
         BaseStatusSignal.refreshAll(motorPosition);
         return motorPosition.getValue().in(Rotation) * 360.0;

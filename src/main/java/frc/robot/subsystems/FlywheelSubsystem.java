@@ -64,9 +64,11 @@ public class FlywheelSubsystem extends SubsystemBase {
   private void configureMotor() {
     TalonFXConfiguration config = new TalonFXConfiguration();
 
+    // Motor output configuration
     config.MotorOutput.NeutralMode = NeutralModeValue.Brake;
     config.MotorOutput.Inverted = InvertedValue.CounterClockwise_Positive;
 
+    // Feedback sensor configuration
     config.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
     config.Feedback.FeedbackRemoteSensorID = 1; // CANcoder ID
     config.Feedback.RotorToSensorRatio = FlywheelConstants.GEAR_RATIO;
@@ -91,28 +93,31 @@ public class FlywheelSubsystem extends SubsystemBase {
       status = flywheelMotorOne.getConfigurator().apply(config);
       if (status.isOK()) break;
     }
-
     if (!status.isOK()) {
       System.err.println("Failed to configure Flywheel motor: " + status);
     }
   }
 
+  // Set target velocity in RPM
   public void setVelocity(double rpm) {
     targetVelocityRPM = clamp(rpm, FlywheelConstants.MIN_RPM, FlywheelConstants.MAX_RPM);
     double rps = targetVelocityRPM / 60.0;
     flywheelMotorOne.setControl(velocityRequest.withVelocity(rps));
   }
 
+  //Flywheel at target Velocity?
   public boolean atVelocity() {
-    double currentRPM = getCurrentVelocityRPM();
-    return Math.abs(currentRPM - targetVelocityRPM) < FlywheelConstants.VELOCITY_TOLERANCE_RPM;
-    }
+  double currentRPM = getCurrentVelocityRPM();
+  return Math.abs(currentRPM - targetVelocityRPM) < FlywheelConstants.VELOCITY_TOLERANCE_RPM;
+  }
 
+  //Get current velocity in RPM
   public double getCurrentVelocityRPM() {
     BaseStatusSignal.refreshAll(motorVelocity);
     return motorVelocity.getValue().in(RotationsPerSecond) * 60.0;
   }
 
+  // Clamp utility
   public double clamp(double value, double min, double max) {
     return Math.max(min, Math.min(max, value));
   }
