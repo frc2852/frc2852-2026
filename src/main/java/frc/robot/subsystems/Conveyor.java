@@ -4,7 +4,7 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.PersisMode;
+import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
@@ -38,7 +38,7 @@ public class Conveyor extends SubsystemBase {
     SparkFlexConfig config = new SparkFlexConfig();
 
     //Motor output
-    config.IdleMode(IdleMode.kCoast);
+    config.idleMode(IdleMode.kCoast);
     config.inverted(false);
 
     //Current Limits
@@ -53,12 +53,12 @@ public class Conveyor extends SubsystemBase {
     config.closedLoop
       .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
       .pid(0.1, 0, 0);
-    motor.configure(config, ResetMode.kResetSafeParameters, PersisMode.kPersistParameters);
+    motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
   public void setSpeed(double rpm){
     setRPM = rpm;
-    pid.setpoint(rpm, ControlType.kVelocity);
+    pid.setSetpoint(rpm, ControlType.kVelocity);
   }
   public boolean isAtSpeed(){
     return Math.abs(encoder.getVelocity() - setRPM) <= tolerance;

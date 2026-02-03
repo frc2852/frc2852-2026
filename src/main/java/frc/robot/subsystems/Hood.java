@@ -79,7 +79,7 @@ public class Hood extends SubsystemBase {
       CANcoderConfiguration config = new CANcoderConfiguration();
       config.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0.5;
       config.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-      config.MagnetSensor.MagnetOffset = 0.0;
+      config.MagnetSensor.MagnetOffset = 0.0; //Const
       encoder.getConfigurator().apply(config);
     }
 
