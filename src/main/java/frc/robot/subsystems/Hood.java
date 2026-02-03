@@ -24,6 +24,9 @@ import com.ctre.phoenix6.signals.NeutralModeValue;
 import com.ctre.phoenix6.signals.SensorDirectionValue;
 import edu.wpi.first.units.measure.Angle;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.CANIds;
+import frc.robot.Constants.HoodConstants;
 
 public class Hood extends SubsystemBase {
 
@@ -46,9 +49,9 @@ public class Hood extends SubsystemBase {
   public Hood() {
 
       //Motor and Encoder Initialization
-      CANBus canbus = new CANBus("canbus");
-      motor = new TalonFX(24, canbus);
-      encoder = new CANcoder(25, canbus);
+      CANBus canbus = new CANBus("Canivore");
+      motor = new TalonFX(CANIds.HOOD_MOTOR, canbus);
+      encoder = new CANcoder(CANIds.HOOD_CANCODER, canbus);
 
       //Control
       positionRequest = new MotionMagicTorqueCurrentFOC(0);
@@ -79,7 +82,7 @@ public class Hood extends SubsystemBase {
       CANcoderConfiguration config = new CANcoderConfiguration();
       config.MagnetSensor.AbsoluteSensorDiscontinuityPoint = 0.5;
       config.MagnetSensor.SensorDirection = SensorDirectionValue.CounterClockwise_Positive;
-      config.MagnetSensor.MagnetOffset = 0.0; //Const
+      config.MagnetSensor.MagnetOffset = Constants.HoodConstants.CANCODER_OFFSET; //Const
       encoder.getConfigurator().apply(config);
     }
 
@@ -92,42 +95,38 @@ public class Hood extends SubsystemBase {
 
       //feedback
       config.Feedback.FeedbackSensorSource = FeedbackSensorSourceValue.FusedCANcoder;
-      config.Feedback.FeedbackRemoteSensorID = 25; //Const
-      config.Feedback.RotorToSensorRatio = 1.0; //Const
+      config.Feedback.FeedbackRemoteSensorID = CANIds.HOOD_CANCODER;
+      config.Feedback.RotorToSensorRatio = HoodConstants.GEAR_RATIO;
       config.Feedback.SensorToMechanismRatio = 1.0;
 
       //PID gains
-      config.Slot0.kS = 0.0; //Const
-      config.Slot0.kV = 0.0; //Const
-      config.Slot0.kA = 2.0; //Const
-      config.Slot0.kP = 0.0; //Const
-      config.Slot0.kI = 0.0; //Const
-      config.Slot0.kD = 0.0; //Const
+      config.Slot0.kS = HoodConstants.S;
+      config.Slot0.kV = HoodConstants.V;
+      config.Slot0.kA = HoodConstants.A;
+      config.Slot0.kP = HoodConstants.P;
+      config.Slot0.kI = HoodConstants.I;
+      config.Slot0.kD = HoodConstants.D;
       config.Slot0.GravityType = GravityTypeValue.Arm_Cosine;
       config.Slot0.kG = 0.0; 
 
       //Motion Magic
-      config.MotionMagic.MotionMagicCruiseVelocity = 1 /360.0; //Const
-      config.MotionMagic.MotionMagicAcceleration = 1 / 360.0; //Const
-      config.MotionMagic.MotionMagicJerk = 1 / 360.0; //Const
+      config.MotionMagic.MotionMagicCruiseVelocity = HoodConstants.MOTION_MAGIC_CRUISE_VELOCITY;
+      config.MotionMagic.MotionMagicAcceleration = HoodConstants.MOTION_MAGIC_ACCELERATION;
+      config.MotionMagic.MotionMagicJerk = HoodConstants.MOTION_MAGIC_JERK;
 
       //Software Limits
       config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-      config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1 / 360.0; //Const
+      config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1 / HoodConstants.MAX_POSITION_DEGREES;
       config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-      config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 1 / 360.0; //Const
+      config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 1 / HoodConstants.MIN_POSITION_DEGREES;
 
       //Current Limits
       config.CurrentLimits.StatorCurrentLimitEnable = true;
-      config.CurrentLimits.StatorCurrentLimit = 1;
+      config.CurrentLimits.StatorCurrentLimit = HoodConstants.STATOR_CURRENT_LIMIT;
       config.CurrentLimits.SupplyCurrentLimitEnable = true;
-      config.CurrentLimits.SupplyCurrentLimit = 1; //Const
-      config.CurrentLimits.SupplyCurrentLowerLimit = 1; //Const
-      config.CurrentLimits.SupplyCurrentLowerTime = 1; //Const
-
-      // Torque current limits
-      config.TorqueCurrent.PeakForwardTorqueCurrent = 1; //Const
-      config.TorqueCurrent.PeakReverseTorqueCurrent = 1; //Const
+      config.CurrentLimits.SupplyCurrentLimit = HoodConstants.SUPPLY_CURRENT_LIMIT;
+      config.CurrentLimits.SupplyCurrentLowerLimit = HoodConstants.SUPPLY_CURRENT_LOWER_LIMIT;
+      config.CurrentLimits.SupplyCurrentLowerTime = HoodConstants.SUPPLY_CURRENT_LOWER_TIME; 
 
       //Apply w/ retry
       StatusCode status = StatusCode.StatusCodeNotInitialized;
@@ -143,14 +142,14 @@ public class Hood extends SubsystemBase {
     }
 
     public void setPosition(double degree) {
-      targetPosition = clamp(degree, 0.0, 180.0); //Const min and max
+      targetPosition = clamp(degree, HoodConstants.MIN_POSITION_DEGREES, HoodConstants.MAX_POSITION_DEGREES); 
       double rotations =  targetPosition / 360.0;
       motor.setControl(positionRequest.withPosition(rotations));
     }
 
     public boolean isAtPosition() {
       double currentDegrees = getCurrentPositionDegrees();
-      return Math.abs(currentDegrees - targetPosition) < 1; //Const tolerance
+      return Math.abs(currentDegrees - targetPosition) < Constants.HoodConstants.POSITION_TOLERANCE_DEGREES;
     }
     
     public double getCurrentPositionDegrees() {

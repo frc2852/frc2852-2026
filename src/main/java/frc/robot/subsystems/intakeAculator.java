@@ -16,6 +16,8 @@ import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants.CANIds;
+import frc.robot.Constants.IntakeActuatorConstants;
 
 public class intakeAculator extends SubsystemBase {
   
@@ -25,16 +27,10 @@ public class intakeAculator extends SubsystemBase {
   private final SparkClosedLoopController pid;
 
   private double setPosition;
-  private double tolerance = 10;
-
- //P, I, D constants
-  private static final double P = 0.1;
-  private static final double I = 0.0;
-  private static final double D = 0.0;
 
   public intakeAculator() {
 
-    motor = new SparkFlex(13, MotorType.kBrushless);
+    motor = new SparkFlex(CANIds.INTAKE_ACTUATOR_MOTOR, MotorType.kBrushless);
     encoder = motor.getEncoder();
     pid = motor.getClosedLoopController();
     configureMotor();
@@ -48,17 +44,16 @@ public class intakeAculator extends SubsystemBase {
     config.inverted(false);
 
     // Current Limits
-    config.smartCurrentLimit(60);
-    config.secondaryCurrentLimit(70);
+    config.smartCurrentLimit(IntakeActuatorConstants.SMART_CURRENT_LIMIT);
+    config.secondaryCurrentLimit(IntakeActuatorConstants.SECONDARY_CURRENT_LIMIT);
 
     // Encoder
-    double INTAKE_GEAR_RATIO = 1;
-    config.encoder.positionConversionFactor(1 / INTAKE_GEAR_RATIO);
-    config.encoder.velocityConversionFactor(1 / INTAKE_GEAR_RATIO);
+    config.encoder.positionConversionFactor(1 / IntakeActuatorConstants.GEAR_RATIO);
+    config.encoder.velocityConversionFactor(1 / IntakeActuatorConstants.GEAR_RATIO);
 
     config.closedLoop
         .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-        .pid(P, I, D); // Const P, I, D
+        .pid(IntakeActuatorConstants.P, IntakeActuatorConstants.I, IntakeActuatorConstants.D);
     motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kNoPersistParameters);
 
   }
@@ -69,7 +64,7 @@ public class intakeAculator extends SubsystemBase {
   }
 
   public boolean isAtPosition() {
-    return Math.abs(encoder.getPosition() - setPosition) <= tolerance;
+    return Math.abs(encoder.getPosition() - setPosition) <= IntakeActuatorConstants.POSITION_TOLERANCE_DEGREES;
   }
 
   @Override
