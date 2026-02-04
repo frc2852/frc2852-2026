@@ -117,9 +117,9 @@ public class Hood extends SubsystemBase {
 
       //Software Limits
       config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-      config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = 1 / HoodConstants.MAX_POSITION_DEGREES;
+      config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = HoodConstants.MAX_POSITION_DEGREES / 360.0;
       config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
-      config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = 1 / HoodConstants.MIN_POSITION_DEGREES;
+      config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = HoodConstants.MIN_POSITION_DEGREES / 360.0;
 
       //Current Limits
       config.CurrentLimits.StatorCurrentLimitEnable = true;
