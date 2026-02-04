@@ -73,7 +73,7 @@ public class Hood extends SubsystemBase {
       , motor.getVelocity(),
       motor.getMotorVoltage());
 
-      //canbus opptimization
+      //canbus optimization
       motor.optimizeBusUtilization();
       encoder.optimizeBusUtilization();
     }
