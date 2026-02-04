@@ -142,7 +142,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Turret at target position?
     public boolean atPosition() {
-        return Math.abs(getCurrentPositionDegrees() - targetDegrees)< TurretConstants.POSITION_TOLERANCE_DEGREES;
+        return Math.abs(getCurrentPositionDegrees() - targetDegrees) < TurretConstants.POSITION_TOLERANCE_DEGREES;
     }
 
 
