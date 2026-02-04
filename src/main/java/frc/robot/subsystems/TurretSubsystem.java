@@ -40,7 +40,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     public TurretSubsystem() {
 
-         CANBus canBus = new CANBus(CANIds.CANIVORE);
+        CANBus canBus = new CANBus(CANIds.CANIVORE);
 
         turretMotor = new TalonFX(CANIds.TURRET_MOTOR, canBus);
         turretCancoder = new CANcoder(CANIds.TURRET_CANCODER, canBus);
