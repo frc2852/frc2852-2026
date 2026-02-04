@@ -40,7 +40,7 @@ public class Hood extends SubsystemBase {
     private final VoltageOut voltageoutRequest;
 
     //Status Signals
-    private final StatusSignal<Angle> motorposition;
+    private final StatusSignal<Angle> motorPosition;
     private final StatusSignal<Angle> cancoderposition;
 
     //State
