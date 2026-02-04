@@ -4,7 +4,7 @@
 
 package frc.robot.subsystems;
 
-import com.revrobotics.PersisMode;
+import com.revrobotics.PersistMode;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
 import com.revrobotics.spark.FeedbackSensor;
@@ -22,7 +22,7 @@ public class Indexer extends SubsystemBase {
   private final SparkFlex motor;
   private final RelativeEncoder encoder;
   private final SparkClosedLoopController pid;
-  
+
   private double setRPM;
   private double tolerance = 10;
 
@@ -37,30 +37,30 @@ public class Indexer extends SubsystemBase {
   public void configureMotor() {
     SparkFlexConfig config = new SparkFlexConfig();
 
-    //Motor output
-    config.IdleMode(IdleMode.kCoast);
+    // Motor output
+    config.idleMode(IdleMode.kCoast);
     config.inverted(false);
 
-    //Current Limits
+    // Current Limits
     config.smartCurrentLimit(60);
     config.secondaryCurrentLimit(70);
-  
-    //Encoder
+
+    // Encoder
     double INTAKE_GEAR_RATIO = 1;
     config.encoder.positionConversionFactor(1 / INTAKE_GEAR_RATIO);
     config.encoder.velocityConversionFactor(1 / INTAKE_GEAR_RATIO);
-    
-    config.closedLoop
-      .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .pid(0.1, 0, 0);
-    motor.configure(config, ResetMode.kResetSafeParameters, PersisMode.kPersistParameters);
+
+    config.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(0.1, 0, 0);
+    motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
-  public void setSpeed(double rpm){
+
+  public void setSpeed(double rpm) {
     setRPM = rpm;
-    pid.setpoint(rpm, ControlType.kVelocity);
+    pid.setSetpoint(rpm, ControlType.kVelocity);
   }
-  public boolean isAtSpeed(){
+
+  public boolean isAtSpeed() {
     return Math.abs(encoder.getVelocity() - setRPM) <= tolerance;
   }
 }
