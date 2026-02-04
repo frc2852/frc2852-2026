@@ -104,7 +104,7 @@ public class TurretSubsystem extends SubsystemBase {
 
         // Soft limits (convert degrees into rotations)
         config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
-        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold =TurretConstants.MAX_POSITION_DEGREES / 360.0;
+        config.SoftwareLimitSwitch.ForwardSoftLimitThreshold = TurretConstants.MAX_POSITION_DEGREES / 360.0;
 
         config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = TurretConstants.MIN_POSITION_DEGREES / 360.0;
