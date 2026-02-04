@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <profiles version="1">
   <profile kind="CodeFormatterProfile" name="FRC2852" version="1">
-    <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="140"/>
-    <setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="140"/>
+    <setting id="org.eclipse.jdt.core.formatter.lineSplit" value="120"/>
+    <setting id="org.eclipse.jdt.core.formatter.comment.line_length" value="120"/>
+    <setting id="org.eclipse.jdt.core.formatter.join_wrapped_lines" value="false"/>
   </profile>
 </profiles>
