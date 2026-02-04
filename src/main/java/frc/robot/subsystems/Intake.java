@@ -22,10 +22,10 @@ public class Intake extends SubsystemBase {
   private final SparkFlex motor;
   private final RelativeEncoder encoder;
   private final SparkClosedLoopController pid;
-  
+
   private double setRPM;
   private double tolerance = 10;
- 
+
   /** Creates a new Intake. */
   public Intake() {
     motor = new SparkFlex(14, MotorType.kBrushless);
@@ -37,30 +37,30 @@ public class Intake extends SubsystemBase {
   public void configureMotor() {
     SparkFlexConfig config = new SparkFlexConfig();
 
-    //Motor output
+    // Motor output
     config.idleMode(IdleMode.kCoast);
     config.inverted(false);
 
-    //Current Limits
+    // Current Limits
     config.smartCurrentLimit(60);
     config.secondaryCurrentLimit(70);
-  
-    //Encoder
+
+    // Encoder
     double INTAKE_GEAR_RATIO = 1;
     config.encoder.positionConversionFactor(1 / INTAKE_GEAR_RATIO);
     config.encoder.velocityConversionFactor(1 / INTAKE_GEAR_RATIO);
-    
-    config.closedLoop
-      .feedbackSensor(FeedbackSensor.kPrimaryEncoder)
-      .pid(0.1, 0, 0);
+
+    config.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(0.1, 0, 0);
     motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
 
   }
-  public void setSpeed(double rpm){
+
+  public void setSpeed(double rpm) {
     setRPM = rpm;
     pid.setSetpoint(rpm, ControlType.kVelocity);
   }
-  public boolean isAtSpeed(){
+
+  public boolean isAtSpeed() {
     return Math.abs(encoder.getVelocity() - setRPM) <= tolerance;
   }
 }
