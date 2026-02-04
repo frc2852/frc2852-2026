@@ -133,7 +133,7 @@ public class TurretSubsystem extends SubsystemBase {
 
     // Set turret position in degrees
     public void setPosition(double degrees) {
-        targetDegrees = clamp(degrees,TurretConstants.MIN_POSITION_DEGREES,TurretConstants.MAX_POSITION_DEGREES);
+        targetDegrees = clamp(degrees, TurretConstants.MIN_POSITION_DEGREES, TurretConstants.MAX_POSITION_DEGREES);
 
         double rotations = targetDegrees / 360.0;
 
