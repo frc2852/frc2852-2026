@@ -49,7 +49,7 @@ public class Hood extends SubsystemBase {
   public Hood() {
 
       //Motor and Encoder Initialization
-      CANBus canbus = new CANBus("Canivore");
+      CANBus canbus = new CANBus(CANIds.CANIVORE);
       motor = new TalonFX(CANIds.HOOD_MOTOR, canbus);
       encoder = new CANcoder(CANIds.HOOD_CANCODER, canbus);
 
