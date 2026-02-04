@@ -110,9 +110,10 @@ public class Hood extends SubsystemBase {
       config.Slot0.kG = 0.0; 
 
       //Motion Magic
-      config.MotionMagic.MotionMagicCruiseVelocity = HoodConstants.MOTION_MAGIC_CRUISE_VELOCITY;
-      config.MotionMagic.MotionMagicAcceleration = HoodConstants.MOTION_MAGIC_ACCELERATION;
-      config.MotionMagic.MotionMagicJerk = HoodConstants.MOTION_MAGIC_JERK;
+      // Convert deg-based constants to rotations-based units for Motion Magic
+      config.MotionMagic.MotionMagicCruiseVelocity = HoodConstants.MOTION_MAGIC_CRUISE_VELOCITY / 360.0;
+      config.MotionMagic.MotionMagicAcceleration = HoodConstants.MOTION_MAGIC_ACCELERATION / 360.0;
+      config.MotionMagic.MotionMagicJerk = HoodConstants.MOTION_MAGIC_JERK / 360.0;
 
       //Software Limits
       config.SoftwareLimitSwitch.ForwardSoftLimitEnable = true;
