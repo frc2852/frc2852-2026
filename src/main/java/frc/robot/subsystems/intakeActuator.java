@@ -19,8 +19,8 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants.CANIds;
 import frc.robot.Constants.IntakeActuatorConstants;
 
-public class intakeAculator extends SubsystemBase {
-  
+public class intakeActuator extends SubsystemBase {
+
   // motor
   private final SparkFlex motor;
   private final RelativeEncoder encoder;
@@ -28,7 +28,7 @@ public class intakeAculator extends SubsystemBase {
 
   private double setPosition;
 
-  public intakeAculator() {
+  public intakeActuator() {
 
     motor = new SparkFlex(CANIds.INTAKE_ACTUATOR_MOTOR, MotorType.kBrushless);
     encoder = motor.getEncoder();

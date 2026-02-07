@@ -36,12 +36,12 @@ public class Hood extends SubsystemBase {
 
   // control
   private final MotionMagicTorqueCurrentFOC positionRequest;
-  private final NeutralOut nuetralRequest;
-  private final VoltageOut voltageoutRequest;
+  private final NeutralOut neutralRequest;
+  private final VoltageOut voltageOutRequest;
 
   // Status Signals
   private final StatusSignal<Angle> motorPosition;
-  private final StatusSignal<Angle> cancoderposition;
+  private final StatusSignal<Angle> cancoderPosition;
 
   // State
   private double targetPosition = 0.0;
@@ -55,8 +55,8 @@ public class Hood extends SubsystemBase {
 
     // Control
     positionRequest = new MotionMagicTorqueCurrentFOC(0);
-    nuetralRequest = new NeutralOut();
-    voltageoutRequest = new VoltageOut(0);
+    neutralRequest = new NeutralOut();
+    voltageOutRequest = new VoltageOut(0);
 
     // Configuration
     configureCANcoder();
@@ -64,12 +64,12 @@ public class Hood extends SubsystemBase {
 
     // Status Signals
     motorPosition = motor.getPosition();
-    cancoderposition = encoder.getPosition();
+    cancoderPosition = encoder.getPosition();
 
     BaseStatusSignal.setUpdateFrequencyForAll(
         250,
         motorPosition,
-        cancoderposition,
+        cancoderPosition,
         motor.getVelocity(),
         motor.getMotorVoltage());
 
