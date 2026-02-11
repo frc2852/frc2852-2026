@@ -29,7 +29,7 @@ public class Turret extends SubsystemBase {
 
     private final TalonFX turretMotor;
     private final CANcoder turretCancoder;
-    private final StatusSignal canCoderPosition;
+    private final StatusSignal<Angle> canCoderPosition;
 
     private final MotionMagicTorqueCurrentFOC positionRequest;
     private final NeutralOut neutralRequest;
