@@ -21,13 +21,15 @@ import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
 import static edu.wpi.first.units.Units.*;
 
+import frc.robot.Constants;
 import frc.robot.Constants.CANIds;
 import frc.robot.Constants.TurretConstants;
 
-public class TurretSubsystem extends SubsystemBase {
+public class Turret extends SubsystemBase {
 
     private final TalonFX turretMotor;
     private final CANcoder turretCancoder;
+    private final StatusSignal canCoderPosition;
 
     private final MotionMagicTorqueCurrentFOC positionRequest;
     private final NeutralOut neutralRequest;
@@ -37,12 +39,14 @@ public class TurretSubsystem extends SubsystemBase {
 
     private double targetDegrees = 0.0;
 
-    public TurretSubsystem() {
+    public Turret() {
 
         CANBus canBus = new CANBus(CANIds.CANIVORE);
 
         turretMotor = new TalonFX(CANIds.TURRET_MOTOR, canBus);
         turretCancoder = new CANcoder(CANIds.TURRET_CANCODER, canBus);
+
+        motorPosition = turretMotor.getPosition();
 
         // Control requests
         positionRequest = new MotionMagicTorqueCurrentFOC(0);
@@ -52,14 +56,10 @@ public class TurretSubsystem extends SubsystemBase {
         configureCANCoder();
         configureMotor();
 
-        motorPosition = turretMotor.getPosition();
+        canCoderPosition = turretCancoder.getAbsolutePosition();
 
-        BaseStatusSignal.setUpdateFrequencyForAll(
-            250,
-            motorPosition,
-            turretMotor.getVelocity(),
-            turretMotor.getMotorVoltage()
-        );
+        BaseStatusSignal.setUpdateFrequencyForAll(Constants.SIGNAL_UPDATE_FREQUENCY_HZ, canCoderPosition, turretMotor.getMotorVoltage(),
+                turretMotor.getVelocity());
 
         turretMotor.optimizeBusUtilization();
         turretCancoder.optimizeBusUtilization();
@@ -109,7 +109,6 @@ public class TurretSubsystem extends SubsystemBase {
         config.SoftwareLimitSwitch.ReverseSoftLimitEnable = true;
         config.SoftwareLimitSwitch.ReverseSoftLimitThreshold = TurretConstants.MIN_POSITION_DEGREES / 360.0;
 
-
         // Current limits
         config.CurrentLimits.SupplyCurrentLimitEnable = true;
         config.CurrentLimits.SupplyCurrentLimit = TurretConstants.SUPPLY_CURRENT_LIMIT;
@@ -122,11 +121,12 @@ public class TurretSubsystem extends SubsystemBase {
         StatusCode status = StatusCode.StatusCodeNotInitialized;
         for (int i = 0; i < 5; i++) {
             status = turretMotor.getConfigurator().apply(config);
-            if (status.isOK()) break;
+            if (status.isOK()) {
+                break;
+            }
         }
-
         if (!status.isOK()) {
-            System.err.println("Failed to configure turret motor: " + status);
+            System.err.println("Failed to configure turret Motor: " + status);
         }
     }
 
@@ -143,7 +143,6 @@ public class TurretSubsystem extends SubsystemBase {
     public boolean atPosition() {
         return Math.abs(getCurrentPositionDegrees() - targetDegrees) < TurretConstants.POSITION_TOLERANCE_DEGREES;
     }
-
 
     // Get current position in degrees
     public double getCurrentPositionDegrees() {

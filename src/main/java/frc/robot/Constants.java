@@ -69,6 +69,8 @@ public final class Constants {
     public static final double SUPPLY_CURRENT_LOWER_LIMIT = 40.0; // Amps - reduced limit after time
     public static final double SUPPLY_CURRENT_LOWER_TIME = 1.0; // Seconds - time before reducing
     public static final double STATOR_CURRENT_LIMIT = 120.0; // Amps
+    public static final double PEAK_FORWARD_TORQUE_CURRENT = 0.0;
+    public static final double PEAK_REVERSE_TORQUE_CURRENT = 0.0;
 
     // Velocity Control
     public static final double VELOCITY_TOLERANCE_RPM = 50.0; // RPM tolerance for atSetpoint()
@@ -165,7 +167,8 @@ public final class Constants {
     public static final double[][] HOOD_LOOKUP_TABLE = { { 1.5, 15.0 }, { 3.0, 25.0 }, { 5.0, 35.0 }, { 7.0, 40.0 }, { 10.0, 45.0 } };
 
     // Flywheel RPM lookup table (distance -> RPM)
-    public static final double[][] FLYWHEEL_LOOKUP_TABLE = { { 1.5, 3000.0 }, { 3.0, 3500.0 }, { 5.0, 4000.0 }, { 7.0, 4500.0 }, { 10.0, 5000.0 } };
+    public static final double[][] FLYWHEEL_LOOKUP_TABLE = { { 1.5, 3000.0 }, { 3.0, 3500.0 }, { 5.0, 4000.0 }, { 7.0, 4500.0 },
+        { 10.0, 5000.0 } };
   }
 
   public static class IntakeActuatorConstants {
@@ -246,22 +249,20 @@ public final class Constants {
   /**
    * Constants for the turret calibration system.
    *
-   * <p><strong>Grid vs Bucket Spacing Design:</strong>
-   * The calibration system uses two different spacing granularities by design:
+   * <p>
+   * <strong>Grid vs Bucket Spacing Design:</strong> The calibration system uses two different spacing granularities by design:
    *
    * <ul>
-   *   <li><strong>UI Grid (0.5m cell size):</strong> Used by the webapp to display robot position
-   *       and track which cells have been calibrated. The larger spacing makes the grid visually
-   *       manageable and provides clear guidance for where to position the robot.</li>
-   *   <li><strong>Build-time Distance Buckets (0.25m):</strong> Used by GenerateLookupTables.java
-   *       when processing calibration data. The finer granularity allows multiple samples taken
-   *       within the same UI grid cell to be grouped into different distance buckets, providing
-   *       more precise interpolation data.</li>
+   * <li><strong>UI Grid (0.5m cell size):</strong> Used by the webapp to display robot position and track which cells have been calibrated.
+   * The larger spacing makes the grid visually manageable and provides clear guidance for where to position the robot.</li>
+   * <li><strong>Build-time Distance Buckets (0.25m):</strong> Used by GenerateLookupTables.java when processing calibration data. The finer
+   * granularity allows multiple samples taken within the same UI grid cell to be grouped into different distance buckets, providing more
+   * precise interpolation data.</li>
    * </ul>
    *
-   * <p>This is intentional: a single UI grid cell may contain multiple calibration points at
-   * slightly different distances, and the build-time processing preserves this detail for
-   * better interpolation accuracy.
+   * <p>
+   * This is intentional: a single UI grid cell may contain multiple calibration points at slightly different distances, and the build-time
+   * processing preserves this detail for better interpolation accuracy.
    */
   public static class CalibrationConstants {
     // Field dimensions
@@ -269,10 +270,8 @@ public final class Constants {
     public static final double FIELD_WIDTH_METERS = 8.21;
 
     /**
-     * Grid cell size for UI display (0.5m).
-     * This determines the visual grid shown in the webapp.
-     * Note: Build-time processing uses 0.25m distance buckets for finer granularity.
-     * See GenerateLookupTables.java for details.
+     * Grid cell size for UI display (0.5m). This determines the visual grid shown in the webapp. Note: Build-time processing uses 0.25m
+     * distance buckets for finer granularity. See GenerateLookupTables.java for details.
      */
     public static final double GRID_CELL_SIZE_METERS = 0.5;
     public static final double CALIBRATION_START_X = 1.0;
@@ -301,12 +300,22 @@ public final class Constants {
     }
 
     // Left camera
-    public static final CameraConfig LEFT_CAMERA = new CameraConfig("LEFT_CAMERA", new Transform3d(new Translation3d(0.3, 0.25, 0.5), // 30cm fwd, 25cm left, 50cm up
+    public static final CameraConfig LEFT_CAMERA = new CameraConfig("LEFT_CAMERA", new Transform3d(new Translation3d(0.3, 0.25, 0.5), // 30cm
+                                                                                                                                      // fwd,
+                                                                                                                                      // 25cm
+                                                                                                                                      // left,
+                                                                                                                                      // 50cm
+                                                                                                                                      // up
         new Rotation3d(0, Math.toRadians(-15), Math.toRadians(30)) // Pitched down 15°, yawed left 30°
     ));
 
     // Right camera
-    public static final CameraConfig RIGHT_CAMERA = new CameraConfig("RIGHT_CAMERA", new Transform3d(new Translation3d(0.3, -0.25, 0.5), // 30cm fwd, 25cm right, 50cm up
+    public static final CameraConfig RIGHT_CAMERA = new CameraConfig("RIGHT_CAMERA", new Transform3d(new Translation3d(0.3, -0.25, 0.5), // 30cm
+                                                                                                                                         // fwd,
+                                                                                                                                         // 25cm
+                                                                                                                                         // right,
+                                                                                                                                         // 50cm
+                                                                                                                                         // up
         new Rotation3d(0, Math.toRadians(-15), Math.toRadians(-30)) // Pitched down 15°, yawed right 30°
     ));
 
