@@ -1,66 +1,134 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import com.revrobotics.PersistMode;
+import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.FeedbackSensor;
-import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
-import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 
+import frc.robot.Constants.CANIds;
+import frc.robot.Constants.ConveyorConstants;
+
 public class Conveyor extends SubsystemBase {
 
-  private final SparkFlex motor;
-  private final RelativeEncoder encoder;
-  private final SparkClosedLoopController pid;
+  // Hardware
+  private final SparkFlex floorMotor;
+  private final SparkFlex takeupMotor;
 
-  private double setRPM;
-  private double tolerance = 10;
+  private final RelativeEncoder floorEncoder;
+  private final RelativeEncoder takeupEncoder;
 
-  /** Creates a new Conveyor. */
   public Conveyor() {
-    motor = new SparkFlex(14, MotorType.kBrushless);
-    encoder = motor.getEncoder();
-    pid = motor.getClosedLoopController();
-    configureMotor();
+    // Initialize hardware
+    floorMotor = new SparkFlex(CANIds.CONVEYOR_FLOOR_MOTOR, MotorType.kBrushless);
+    takeupMotor = new SparkFlex(CANIds.CONVEYOR_TAKE_UP_MOTOR, MotorType.kBrushless);
+
+    floorEncoder = floorMotor.getEncoder();
+    takeupEncoder = takeupMotor.getEncoder();
+
+    // Configure motors
+    configureMotor(floorMotor, "Floor", false);
+    configureMotor(takeupMotor, "Takeup", true);
   }
 
-  public void configureMotor() {
+  private void configureMotor(SparkFlex motor, String name, boolean inverted) {
     SparkFlexConfig config = new SparkFlexConfig();
 
     // Motor output
     config.idleMode(IdleMode.kCoast);
-    config.inverted(false);
+    config.inverted(inverted);
 
-    // Current Limits
-    config.smartCurrentLimit(60);
-    config.secondaryCurrentLimit(70);
+    // Current limits - high limits for sustained high-speed operation
+    config.smartCurrentLimit(ConveyorConstants.SMART_CURRENT_LIMIT);
+    config.secondaryCurrentLimit(ConveyorConstants.SECONDARY_CURRENT_LIMIT);
 
-    // Encoder
-    double INTAKE_GEAR_RATIO = 1;
-    config.encoder.positionConversionFactor(1 / INTAKE_GEAR_RATIO);
-    config.encoder.velocityConversionFactor(1 / INTAKE_GEAR_RATIO);
+    // Encoder configuration - convert to mechanism rotations
+    config.encoder.positionConversionFactor(1.0 / ConveyorConstants.GEAR_RATIO);
+    config.encoder.velocityConversionFactor(1.0 / ConveyorConstants.GEAR_RATIO / 60.0);
 
-    config.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(0.1, 0, 0);
-    motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
+    // Apply configuration with retry
+    REVLibError error = REVLibError.kError;
+    for (int i = 0; i < 5; i++) {
+      error = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+      if (error == REVLibError.kOk) {
+        break;
+      }
+    }
+    if (error != REVLibError.kOk) {
+      System.err.println("Failed to configure Conveyor " + name + " motor: " + error);
+    }
   }
 
-  public void setSpeed(double rpm) {
-    setRPM = rpm;
-    pid.setSetpoint(rpm, ControlType.kVelocity);
+  /**
+   * Run all conveyor motors at feed speed to move balls to the shooter.
+   */
+  public void runFeed() {
+    floorMotor.set(ConveyorConstants.FEED_SPEED);
+    takeupMotor.set(ConveyorConstants.FEED_SPEED);
   }
 
-  public boolean isAtSpeed() {
-    return Math.abs(encoder.getVelocity() - setRPM) <= tolerance;
+  /**
+   * Reverse all conveyor motors to clear jams.
+   */
+  public void runReverse() {
+    floorMotor.set(ConveyorConstants.REVERSE_SPEED);
+    takeupMotor.set(ConveyorConstants.REVERSE_SPEED);
+  }
+
+  /**
+   * Run only the floor rollers
+   */
+  public void runFloor() {
+    floorMotor.set(ConveyorConstants.FEED_SPEED);
+  }
+
+  /**
+   * Run only the takeup motor
+   */
+  public void runTakeup() {
+    takeupMotor.set(ConveyorConstants.FEED_SPEED);
+  }
+
+  /**
+   * Stop all conveyor motors.
+   */
+  public void stop() {
+    floorMotor.setVoltage(0);
+    takeupMotor.setVoltage(0);
+  }
+
+  /**
+   * Stop only the floor motor.
+   */
+  public void stopFloor() {
+    floorMotor.setVoltage(0);
+  }
+
+  /**
+   * Stop only the takeup motor.
+   */
+  public void stopTakeup() {
+    takeupMotor.setVoltage(0);
+  }
+
+  public double getFloorVelocityRPS() {
+    return floorEncoder.getVelocity();
+  }
+
+  public double getTakeupVelocityRPS() {
+    return takeupEncoder.getVelocity();
+  }
+
+  @Override
+  public void periodic() {
+    // SmartDashboard.putNumber("Conveyor/Floor Velocity RPS", getFloorVelocityRPS());
+    // SmartDashboard.putNumber("Conveyor/Takeup Velocity RPS", getTakeupVelocityRPS());
+    // SmartDashboard.putNumber("Conveyor/Floor Output", floorMotor.getAppliedOutput());
+    // SmartDashboard.putNumber("Conveyor/Takeup Output", takeupMotor.getAppliedOutput());
   }
 }

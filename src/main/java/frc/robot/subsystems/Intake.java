@@ -1,66 +1,92 @@
-// Copyright (c) FIRST and other WPILib contributors.
-// Open Source Software; you can modify and/or share it under the terms of
-// the WPILib BSD license file in the root directory of this project.
-
 package frc.robot.subsystems;
 
 import com.revrobotics.PersistMode;
+import com.revrobotics.REVLibError;
 import com.revrobotics.RelativeEncoder;
 import com.revrobotics.ResetMode;
-import com.revrobotics.spark.FeedbackSensor;
-import com.revrobotics.spark.SparkClosedLoopController;
 import com.revrobotics.spark.SparkFlex;
-import com.revrobotics.spark.SparkBase.ControlType;
 import com.revrobotics.spark.SparkLowLevel.MotorType;
-import com.revrobotics.spark.config.SparkFlexConfig;
 import com.revrobotics.spark.config.SparkBaseConfig.IdleMode;
+import com.revrobotics.spark.config.SparkFlexConfig;
 
+import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
+
+import frc.robot.Constants.CANIds;
+import frc.robot.Constants.IntakeConstants;
 
 public class Intake extends SubsystemBase {
 
+  // Hardware
   private final SparkFlex motor;
   private final RelativeEncoder encoder;
-  private final SparkClosedLoopController pid;
 
-  private double setRPM;
-  private double tolerance = 10;
-
-  /** Creates a new Intake. */
   public Intake() {
-    motor = new SparkFlex(14, MotorType.kBrushless);
+    // Initialize hardware
+    motor = new SparkFlex(CANIds.INTAKE_ROLLER_MOTOR, MotorType.kBrushless);
     encoder = motor.getEncoder();
-    pid = motor.getClosedLoopController();
+
+    // Configure motor
     configureMotor();
   }
 
-  public void configureMotor() {
+  private void configureMotor() {
     SparkFlexConfig config = new SparkFlexConfig();
 
     // Motor output
-    config.idleMode(IdleMode.kCoast);
-    config.inverted(false);
+    config.idleMode(IdleMode.kBrake);
+    config.inverted(true);
 
-    // Current Limits
-    config.smartCurrentLimit(60);
-    config.secondaryCurrentLimit(70);
+    // Current limits
+    config.smartCurrentLimit(IntakeConstants.SMART_CURRENT_LIMIT);
+    config.secondaryCurrentLimit(IntakeConstants.SECONDARY_CURRENT_LIMIT);
 
-    // Encoder
-    double INTAKE_GEAR_RATIO = 1;
-    config.encoder.positionConversionFactor(1 / INTAKE_GEAR_RATIO);
-    config.encoder.velocityConversionFactor(1 / INTAKE_GEAR_RATIO);
+    // Encoder configuration - convert to mechanism rotations
+    config.encoder.positionConversionFactor(1.0 / IntakeConstants.GEAR_RATIO);
+    config.encoder.velocityConversionFactor(1.0 / IntakeConstants.GEAR_RATIO / 60.0);
 
-    config.closedLoop.feedbackSensor(FeedbackSensor.kPrimaryEncoder).pid(0.1, 0, 0);
-    motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
-
+    // Apply configuration with retry
+    REVLibError error = REVLibError.kError;
+    for (int i = 0; i < 5; i++) {
+      error = motor.configure(config, ResetMode.kResetSafeParameters, PersistMode.kPersistParameters);
+      if (error == REVLibError.kOk) {
+        break;
+      }
+    }
+    if (error != REVLibError.kOk) {
+      System.err.println("Failed to configure Intake motor: " + error);
+    }
   }
 
-  public void setSpeed(double rpm) {
-    setRPM = rpm;
-    pid.setSetpoint(rpm, ControlType.kVelocity);
+  private void setSpeed(double speed) {
+    motor.set(speed);
   }
 
-  public boolean isAtSpeed() {
-    return Math.abs(encoder.getVelocity() - setRPM) <= tolerance;
+  public void runIntake() {
+    setSpeed(IntakeConstants.INTAKE_SPEED);
+  }
+
+  public void runOuttake() {
+    setSpeed(IntakeConstants.OUTTAKE_SPEED);
+  }
+
+  public void stop() {
+    motor.setVoltage(0);
+  }
+
+  public double getVelocityRPS() {
+    return encoder.getVelocity();
+  }
+
+  public Command runCommand() {
+    return run(this::runIntake)
+        .finallyDo(this::stop)
+        .withName("Intake.run");
+  }
+
+  @Override
+  public void periodic() {
+    // SmartDashboard.putNumber("Intake/Velocity RPS", getVelocityRPS());
+    // SmartDashboard.putNumber("Intake/Applied Output", motor.getAppliedOutput());
   }
 }
