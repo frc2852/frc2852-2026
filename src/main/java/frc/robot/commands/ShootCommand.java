@@ -1,0 +1,208 @@
+package frc.robot.commands;
+
+import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.wpilibj.DriverStation;
+import frc.robot.Constants.TurretAimingConstants;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.Command;
+import frc.robot.subsystems.Indexer;
+import frc.robot.subsystems.Flywheel;
+import frc.robot.subsystems.Hood;
+import frc.robot.subsystems.Intake;
+import frc.robot.subsystems.IntakeActuator;
+import frc.robot.subsystems.Turret;
+import frc.robot.util.DiagnosticLogger;
+import frc.robot.util.TurretAimingCalculator;
+
+/**
+ * Shooting command that coordinates flywheel, hood, indexer, and intake
+ * actuator.
+ *
+ * <p>
+ * Phase 1 (Spin-up): Sets flywheel RPM and hood angle from the lookup table
+ * based on robot position. Continuously
+ * updates as the robot moves. Waits for flywheel to reach setpoint.
+ *
+ * <p>
+ * Phase 2 (Feeding): Once the flywheel is at speed, hood is at position, and
+ * turret is aimed, runs the indexer and
+ * agitates the intake actuator to feed game pieces.
+ *
+ * <p>
+ * This command never finishes on its own - it runs until interrupted (button
+ * released). The turret is NOT required by
+ * this command; its default aim command continues independently.
+ */
+public class ShootCommand extends Command {
+
+    /**
+     * Once feeding, pause if the turret is pulled this far off its setpoint
+     * (target flip, seam unwind, pose jump) — keeping the feed running would
+     * spray balls in whatever direction the turret happens to pass through.
+     */
+    private static final double FEED_PAUSE_TURRET_ERROR_DEGREES = 10.0;
+
+    private final Flywheel flywheel;
+    private final Hood hood;
+    private final Indexer indexer;
+    private final Intake intake;
+    private final Turret turret;
+    private final TurretAimingCalculator aimingCalculator;
+    private final IntakeActuator intakeActuator;
+    private final DiagnosticLogger shotLogger;
+
+    private boolean isFeeding;
+    private boolean waitingForExtend;
+
+    /**
+     * Teleop constructor - includes intake actuator.
+     */
+    public ShootCommand(
+            Flywheel flywheel,
+            Hood hood,
+            Indexer indexer,
+            Intake intake,
+            Turret turret,
+            TurretAimingCalculator aimingCalculator,
+            IntakeActuator intakeActuator,
+            DiagnosticLogger shotLogger) {
+        this.flywheel = flywheel;
+        this.hood = hood;
+        this.indexer = indexer;
+        this.intake = intake;
+        this.turret = turret;
+        this.aimingCalculator = aimingCalculator;
+        this.intakeActuator = intakeActuator;
+        this.shotLogger = shotLogger;
+
+        addRequirements(flywheel, hood, indexer, intake, intakeActuator);
+    }
+
+    /** Auto constructor - no intake actuator. */
+    public ShootCommand(
+            Flywheel flywheel,
+            Hood hood,
+            Indexer indexer,
+            Intake intake,
+            Turret turret,
+            TurretAimingCalculator aimingCalculator,
+            DiagnosticLogger shotLogger) {
+        this.flywheel = flywheel;
+        this.hood = hood;
+        this.indexer = indexer;
+        this.intake = intake;
+        this.turret = turret;
+        this.aimingCalculator = aimingCalculator;
+        this.intakeActuator = null;
+        this.shotLogger = shotLogger;
+
+        addRequirements(flywheel, hood, indexer, intake);
+    }
+
+    @Override
+    public void initialize() {
+        isFeeding = false;
+        waitingForExtend = false;
+        if (intakeActuator != null) {
+            intakeActuator.resetAgitate();
+        }
+    }
+
+    @Override
+    public void execute() {
+        // One coherent solution per loop: hood/RPM here and the turret angle in
+        // the turret default command come from the same solver state
+        var solution = aimingCalculator.solve();
+        double targetRPM = solution.flywheelRPM();
+        double targetHoodAngle = solution.hoodAngleDegrees();
+
+        flywheel.setVelocity(targetRPM);
+        hood.setPosition(targetHoodAngle);
+
+        // True aim error: solved bearing vs measured turret position, on the
+        // shortest angular path. The turret's own at-position check compares
+        // against its commanded target, which can deliberately lag the
+        // solution (seam-hold hysteresis) — this must not count as aimed.
+        double aimErrorDegrees = Math.abs(MathUtil.inputModulus(
+                solution.turretAngleDegrees() - turret.getPositionDegrees(), -180.0, 180.0));
+
+        // Hold fire until every mechanism is on target, not just the flywheel —
+        // feeding while the hood or turret is still moving is a guaranteed miss
+        if (!isFeeding
+                && flywheel.atSetpoint()
+                && hood.atPosition()
+                && aimErrorDegrees <= TurretAimingConstants.AIM_TOLERANCE_DEGREES
+                && solution.isReachable()) {
+            isFeeding = true;
+        }
+
+        // Pause the volley if the shot stops being viable mid-stream (target
+        // flip, seam unwind, pose jump); the latch above re-arms once
+        // everything is back on target
+        if (isFeeding && (!solution.isReachable()
+                || aimErrorDegrees > FEED_PAUSE_TURRET_ERROR_DEGREES)) {
+            isFeeding = false;
+        }
+
+        // Always run group motors and intake
+        if (isFeeding) {
+            indexer.runIndependentFeed();
+            indexer.runGroupFeed();
+            intake.runIntake();
+        } else {
+            indexer.stop();
+            intake.stop();
+        }
+
+        // Intake actuator control (teleop only)
+        if (intakeActuator != null) {
+            if (waitingForExtend) {
+                intakeActuator.driveExtend();
+                if (intakeActuator.isExtended()) {
+                    waitingForExtend = false;
+                }
+            } else {
+                intakeActuator.runAgitate();
+            }
+        }
+
+        // Telemetry
+        SmartDashboard.putNumber("Shoot/TargetRPM", targetRPM);
+        SmartDashboard.putNumber("Shoot/TargetHoodAngle", targetHoodAngle);
+        SmartDashboard.putBoolean("Shoot/Feeding", isFeeding);
+        SmartDashboard.putNumber("Shoot/DistanceMeters", solution.distanceMeters());
+        SmartDashboard.putNumber("Shoot/TimeOfFlight", solution.timeOfFlightSeconds());
+        SmartDashboard.putBoolean("Shoot/IsHubShot", solution.isHubShot());
+
+        // Shot logging
+        Pose2d pose = aimingCalculator.getRobotPose();
+        shotLogger.logRow(
+                DriverStation.getMatchTime(),
+                pose != null ? pose.getX() : 0.0,
+                pose != null ? pose.getY() : 0.0,
+                targetRPM,
+                flywheel.getCurrentVelocityRPM(),
+                targetHoodAngle,
+                hood.getCurrentPositionDegrees(),
+                isFeeding ? 1.0 : 0.0);
+    }
+
+    @Override
+    public void end(boolean interrupted) {
+        flywheel.setVelocity(0);
+        hood.setPosition(0);
+        indexer.stop();
+        intake.stop();
+        if (intakeActuator != null) {
+            intakeActuator.driveExtend();
+        }
+        isFeeding = false;
+    }
+
+    @Override
+    public boolean isFinished() {
+        return false;
+    }
+
+}
